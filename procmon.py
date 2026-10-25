@@ -751,12 +751,14 @@ class DiskScanner:
         return total
 
 
+# POSIX file 변환은 Finder 블록 밖에서 해야 한다(안에서 하면 Finder 가 -1728 오류를 낸다).
+# alias 는 링크를 따라가지만 trash_refusal 이 링크를 미리 거부한다.
 TRASH_SCRIPT = """on run argv
-    tell application "Finder"
-        repeat with p in argv
-            delete (POSIX file (p as text))
-        end repeat
-    end tell
+    set targets to {}
+    repeat with p in argv
+        set end of targets to (POSIX file (p as text)) as alias
+    end repeat
+    tell application "Finder" to delete targets
 end run"""
 
 
