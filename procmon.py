@@ -963,6 +963,7 @@ class App:
         self.last_trash: tuple | None = None
         self._storage_row_cache: dict[str, tuple] = {}
         self._volume_widgets: dict[str, dict] = {}
+        self._storage_autoscanned = False
         self.errors: list[str] = []
         self.render_count = 0
         self.last_kill: KillResult | None = None
@@ -1540,6 +1541,11 @@ class App:
     def _on_tab_changed(self, _event=None) -> None:
         if self._storage_tab_active():
             self._render_volumes()
+            # 처음 열면 주요 위치 크기를 바로 잰다 (버튼을 누르기 전엔 비어 보여 고장으로 오해하기 쉽다).
+            if (self.interactive and not self._storage_autoscanned and self.storage_mode == "locations"
+                    and LOCATIONS_KEY not in self.storage_cache and self.storage_job is None):
+                self._storage_autoscanned = True
+                self.storage_scan()
         apps = self._apps_tab_active()
         self.collector.top_wanted = apps
         if apps:
@@ -1750,7 +1756,7 @@ class App:
     def _storage_values(self, row: dict, denom: int) -> tuple:
         state, size = row["state"], row["size"]
         if state == "idle":
-            size_text = "–"
+            size_text = "계산 전"
         elif state == "pending":
             size_text = "계산 중…"
         elif state == "denied":
